@@ -9,7 +9,10 @@ async function bootstrap() {
 
   app.enableCors();
 
-  // TODO
+  // Configure static assets for uploaded files
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

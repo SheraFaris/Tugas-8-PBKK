@@ -12,7 +12,16 @@ function NewPostContent() {
   const { token } = useAuth();
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    // TODO
+    const files = e.target.files;
+    if (files && files[0]) {
+      const file = files[0];
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   function removeImage() {
@@ -33,22 +42,55 @@ function NewPostContent() {
       // Upload image to S3 if selected
       if (imageFile) {
         // Get presigned URL
-        const presignedResponse = null; // TODO
+        const presignedResponse = await fetch(
+          "http://localhost:3000/s3/presigned-url",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              fileExtension: imageFile.name.split(".").pop() || "jpg",
+              contentType: imageFile.type || "image/jpeg",
+            }),
+          }
+        );
 
         if (!presignedResponse.ok) {
           throw new Error("Failed to get presigned URL");
         }
 
+        const presignedData = await presignedResponse.json();
+
         // Upload file to S3
-        const uploadResponse = null; // TODO
+        const uploadResponse = await fetch(presignedData.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": imageFile.type || "image/jpeg",
+          },
+          body: imageFile,
+        });
 
         if (!uploadResponse.ok) {
           throw new Error("Failed to upload image");
         }
+
+        imagePath = presignedData.imagePath;
       }
 
       // Create post
-      const response = null; // TODO
+      const response = await fetch("http://localhost:3000/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content,
+          imagePath,
+        }),
+      });
 
       if (response.ok) {
         router.push("/");

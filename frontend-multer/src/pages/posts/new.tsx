@@ -12,7 +12,16 @@ function NewPostContent() {
   const { token } = useAuth();
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    // TODO
+    const files = e.target.files;
+    if (files && files[0]) {
+      const file = files[0];
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   function removeImage() {
@@ -32,11 +41,37 @@ function NewPostContent() {
 
       // Upload image if selected
       if (imageFile) {
-        const uploadResponse = null; // TODO
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        const uploadResponse = await fetch("http://localhost:3000/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const uploadData = await uploadResponse.json();
+        imagePath = uploadData.imagePath;
       }
 
       // Create post
-      const response = null; // TODO
+      const response = await fetch("http://localhost:3000/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content,
+          imagePath,
+        }),
+      });
 
       if (response.ok) {
         router.push("/");

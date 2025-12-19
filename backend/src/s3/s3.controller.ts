@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { S3Service } from './s3.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GeneratePresignedUrlDto } from './dto/generate-presigned-url.dto';
@@ -9,7 +9,11 @@ export class S3Controller {
 
   @Post('presigned-url')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
   async generatePresignedUrl(@Body() dto: GeneratePresignedUrlDto) {
-    // TODO
+    return this.s3Service.generatePresignedUrl(
+      dto.fileExtension,
+      dto.contentType,
+    );
   }
 }
